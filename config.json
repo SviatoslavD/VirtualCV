@@ -1,0 +1,21 @@
+{
+    "common": {
+        "appName": "VirtualCV",
+        "formatDOB": "MM/DD/YYYY",
+        "formatDOBforDB": "YYYY-MM-DD"
+    },
+    "debug": {
+        "cookieHost": "",
+        "uiPortalUrl": "//localhost:8000/",
+        "apiPortalUrl": ""
+    },
+    "dev": {
+        "cookieHost": "",
+        "uiPortalUrl": "//localhost:8008/",
+        "apiPortalUrl": ""
+    },
+    "stage": {
+    },
+    "prod": {
+    }
+}
