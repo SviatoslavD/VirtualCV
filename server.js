@@ -11,7 +11,7 @@ var express = require('express'),
 
 app.use(express.static(path.join(__dirname, target)));
 
-app.use(serveStatic(path(__dirname, target), {
+app.use(serveStatic(path.join(__dirname, target), {
     'index': ['index.html']
 }));
 
