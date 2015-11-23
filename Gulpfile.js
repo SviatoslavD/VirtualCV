@@ -1,6 +1,6 @@
 var gulp = require('gulp'),
     concat = require('gulp-concat'),
-    plumber = require('gulp-plumber'),
+    plumber = require('gulp-plumber'), // Prevent pipe breaking caused by errors from gulp plugins
     inject = require('gulp-inject'), // nject file references into your index.html
     fs = require('fs'),
     uglify = require('gulp-uglify'),
@@ -41,7 +41,7 @@ var config = require('./config.json'),
     }
 
 if(isBuild) {
-    gutil.log('OMG! It\'s production build');
+    gutil.log('OMG! It\'s build');
     path.app = path.dist;
 }
 
@@ -56,7 +56,7 @@ var appConfig = extend(true, config.common, config[env]);
 var appConfigStr = JSON.stringify(appConfig);
 
 // application
-//var app = 'app';
+// var app = 'app';
 
 gutil.log('Running env = ' + env);
 gutil.log('[path] src = ' + path.src);
@@ -71,8 +71,8 @@ gutil.log('[path] pathToBowerJson = ' + pathToBowerJson);
 gulp.task('app:css:clean', cleanCss);
 gulp.task('app:css:init', ['app:css:clean'], initCss);
 gulp.task('app:css:transform', ['app:css:init'], genCss);
-gulp.task('app.css', ['app:css:transform'], function () {
-    return gulp.src(['assets/css/**/*.less', 'assets/css/**/_**'], {cv: path.app}).pipe(clean());
+gulp.task('app:css', ['app:css:transform'], function () {
+    return gulp.src(['assets/css/**/*.less', 'assets/css/**/_**'], {cwd: path.app}).pipe(clean());
 });
 
 // validate JS
@@ -106,28 +106,47 @@ function injectAppVars () {
 }
 
 function cleanCss () {
-    gutil.log('***cleanCss***');
+    gutil.log('***clean CSS***');
     return gulp.src(path.app + 'assets/css/').pipe(clean());
 }
 
+// src takes an array of source paths
+// dest copies results to given dir
+// pipe chains all tasks together
+// cwd - change working dir
 function initCss () {
-    gutil.log('***initCss***');
-    
+    gutil.log('***init CSS***');
+    return gulp.src(['assets/style/**/*'], {cwd: path.app})
+        .pipe(injectAppVars())
+        .pipe(gulp.dest('css', {cwd: path.app + 'assets/'})); // create folder if don't exist 
+}
+
+function genCss () {
+    gutil.log("***generate CSS***");
+    return gulp.src('*.less', {cwd: path.app + 'assets/css/'})
+        .pipe(plumber({errorHandler: handleError}))
+        .pipe(less({
+            path: [path.app, path.app + 'assets/css', path.app + 'assets/css/']
+        }))
+        .pipe(uglifySources ? minifyCss({processImport: false}) : nop())
+        .pipe(gulp.dest('.', {cwd: path.app + 'assets/css/'}));
+        /// return LESS
 }
 
 function lintJS () {
     gutil.log('lintJS - running');
-    return gulp.src(['app/**/*.js'], {cv: path.app})
+    return gulp.src(['app/**/*.js'], {cwd: path.app})
         .pipe(jshint())
         .pipe(jshint.reporter(stylish)) //  log the errors using the stylish reporter
         .pipe(jshint.reporter('default')); //  then run default if JSHint was not a success.
 }
 
 function genHtml () {
-    return gulp.src('index.tpl.html', {cv: path.app})
-        .pipe(injectAppVars()
+    return gulp.src(['index.tpl.html'], {cwd: path.app})
+        .pipe(injectAppVars())
         .pipe(injectAppScripts())
         .pipe(injectVendors())
+        .pipe(rename('index.html'))
         .pipe(gulp.dest(path.app));
 }
 
@@ -136,24 +155,44 @@ function injectAppScripts () {
     gutil.log('---------Inject APP scripts-------');
     var jsAppFiles = ['app/app.js', 'app/**/*.js'];
     return inject(gulp.src(jsAppFiles,
-        {read: false, cv: path.app}),
+        {read: false, cwd: path.app}),
         {relative: true, transform: transform, name: 'index'});
 }
 
 // inject vendor scripts (bower)
 function injectVendors () {
     gutil.log('-----------Inject Vendor scripts--------');
-    var isVendorFiles = bowerFiles({filter: /.*\.js$/, paths: {bowerJson: pathToBowerJson, bowerDirectory: pathToVendors}});
+    var jsVendorsFiles = bowerFiles({filter: /.*\.js$/, paths: {bowerJson: pathToBowerJson, bowerDirectory: pathToVendors}});
     return inject(gulp.src(jsVendorsFiles, 
-        {cv: path.app}),
+        {cwd: path.app}),
         {relative: true, transform: transform, name: 'bower'});
+}
+
+function transform (filepath, file, i, length) {
+    if(filepath.indexOf('.js') > -1) {
+        return '<script crossorigin="anonymous" src="' + getBustedFile(filepath) + '"></script>';
+    } else {
+        return '<link rel="stylesheet" type="text/css" href="' + getBustedFile(filepath) + '"/>';
+    }
+}
+
+// simple wrapper for injected files that adds the bust param
+function getBustedFile (fileName) {
+    return path.urlStatic + fileName + buildVersionUrlParam;
+}
+
+function handleError () {
+    gutil.log(err.toString());
+    this.emit('end')
 }
 
 /******* startup taks *******/
 
 // default task
 if (isBuild) {
-    gulp.task('default', ['package']);
+    gulp.task('def', function () {
+        gutil.log('***BUILD***')
+    });
 } else {
-    gulp.task('default', ['app:html', watchLocalChanges]);
+    gulp.task('default', ['app:html'], watchLocalChanges);
 }
