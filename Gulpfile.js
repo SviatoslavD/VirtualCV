@@ -116,7 +116,7 @@ function cleanCss () {
 // cwd - change working dir
 function initCss () {
     gutil.log('***init CSS***');
-    return gulp.src(['assets/style/**/*'], {cwd: path.app})
+    return gulp.src(['assets/styles/**/*'], {cwd: path.app})
         .pipe(injectAppVars())
         .pipe(gulp.dest('css', {cwd: path.app + 'assets/'})); // create folder if don't exist 
 }
@@ -126,7 +126,7 @@ function genCss () {
     return gulp.src('*.less', {cwd: path.app + 'assets/css/'})
         .pipe(plumber({errorHandler: handleError}))
         .pipe(less({
-            path: [path.app, path.app + 'assets/css', path.app + 'assets/css/']
+            path: [path.app, path.app + 'assets/css/']
         }))
         .pipe(uglifySources ? minifyCss({processImport: false}) : nop())
         .pipe(gulp.dest('.', {cwd: path.app + 'assets/css/'}));
