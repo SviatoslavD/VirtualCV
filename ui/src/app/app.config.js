@@ -8,5 +8,8 @@
         config.$inject = ['$urlRouterProvider', '$stateProvider'];
         function config($urlRouterProvider, $stateProvider) {
             console.log('config providers !!!');
+
+            // default state
+            $urlRouterProvider.otherwise('/');
         }
 })();

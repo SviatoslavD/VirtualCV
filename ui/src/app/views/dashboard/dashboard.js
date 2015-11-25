@@ -8,5 +8,6 @@
 
         function DashboardCtrl($scope) {
             console.log('dashboard Ctrl');
+            $scope.dashboard = 'dashboard';
         }
 })();

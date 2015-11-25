@@ -7,7 +7,7 @@
         routes.$inject = ['$urlRouterProvider', '$stateProvider', 'globalGetStaticRoot'];
 
         function routes($urlRouterProvider, $stateProvider, globalGetStaticRoot) {
-            console.log('routes !!!');
+            console.log('!!!routes !!!');
 
             $stateProvider
                 .state('dashboard', {
